@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 会議メモ整理（gijiroku-app）
 
-## Getting Started
+会議メモ・文字起こし・箇条書きを貼り付けると、Google Gemini で自動整理し、決定事項・未決事項・タスク・次回確認事項として見やすく表示する社内Webアプリです。ローカルPC上で動作します。
 
-First, run the development server:
+## 主な機能
+
+- **入力**: 会議メモ・音声文字起こし・箇条書きをそのまま貼り付け
+- **解析**: ボタン1つで Gemini API に送信し、構造化して取得
+- **表示**: 決定事項 / 未決・保留 / タスク一覧 / 担当者別・期限順 / 次回確認事項
+- **コピー**: 各セクション単位・全体を Markdown でコピー
+- **エクスポート**: Markdown ファイル・タスクの CSV ダウンロード
+- **ローカル保存**: 直近の入力1件をブラウザに保存（再訪問時に復元）
+- **サンプル**: 初回はサンプル会議メモを表示
+
+## 技術構成
+
+- **Next.js** (App Router) + **TypeScript**
+- **Tailwind CSS** でスタイル
+- **Google Gemini 2.5 Flash**（`gemini-2.5-flash`）で解析
+- APIキーはサーバー側のみ使用（クライアントに露出しません）
+
+## セットアップ手順
+
+### 1. リポジトリの取得
+
+```bash
+git clone <リポジトリURL>
+cd gijiroku-app
+```
+
+### 2. 依存関係のインストール
+
+```bash
+npm install
+```
+
+### 3. APIキーの設定
+
+`.env.example` をコピーして `.env.local` を作成し、Gemini API キーを設定します。
+
+```bash
+cp .env.example .env.local
+```
+
+`.env.local` を開き、取得した API キーを記述します。
+
+```
+GEMINI_API_KEY=あなたのAPIキー
+```
+
+APIキーは [Google AI Studio](https://aistudio.google.com/apikey) で取得できます。
+
+### 4. 起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ブラウザで [http://localhost:3000](http://localhost:3000) を開いて利用します。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 起動コマンド一覧
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| コマンド | 説明 |
+|----------|------|
+| `npm run dev` | 開発サーバー起動（推奨） |
+| `npm run build` | 本番ビルド |
+| `npm run start` | 本番モードで起動（`build` 後） |
+| `npm run lint` | ESLint 実行 |
 
-## Learn More
+**通常の利用では `npm run dev` の1コマンドで起動できます。**
 
-To learn more about Next.js, take a look at the following resources:
+## フォルダ構成
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+gijiroku-app/
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   └── parse/
+│   │   │       └── route.ts   # Gemini 解析 API
+│   │   ├── layout.tsx
+│   │   ├── page.tsx           # メイン画面
+│   │   └── globals.css
+│   ├── lib/
+│   │   └── sampleMemo.ts      # サンプル会議メモ
+│   └── types/
+│       └── meeting.ts         # 解析結果の型定義
+├── .env.example
+├── .env.local                 # 要作成（Git に含めない）
+├── package.json
+├── README.md
+└── tsconfig.json
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 使い方
 
-## Deploy on Vercel
+1. トップページのテキストエリアに会議メモを貼り付ける（サンプルが入っている場合はそのまま試すか、書き換えてください）。
+2. **解析する** ボタンをクリックする。
+3. 結果が「要約」「決定事項」「未決事項」「タスク一覧」「次回確認事項」などに分かれて表示されます。
+4. 各ブロックの **コピー** でクリップボードにコピー。**全体をMarkdownでコピー** で一括コピー。
+5. **Markdownでダウンロード** / **タスクをCSVでダウンロード** でファイル保存。
+6. タスク一覧は「担当者別」「期限順」で並び替え可能です。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 注意事項
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- APIキーは `.env.local` にのみ記載し、Git にコミットしないでください。
+- 社内利用を想定しており、ログイン機能やデータベースはありません。
+- 入力はブラウザのローカルストレージに直近1件だけ保存されます。
+
+## ライセンス
+
+社内利用を想定したプロジェクトです。
