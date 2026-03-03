@@ -1,0 +1,8 @@
+# Netlify 用ビルド設定（会議メモ整理アプリ）
+# 環境変数 GEMINI_API_KEY は Netlify の「サイト設定 > 環境変数」で設定してください
+
+[build]
+  command = "npm run build"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

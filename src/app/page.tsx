@@ -25,6 +25,32 @@ function buildMarkdown(data: MeetingParseResult, taskSort: TaskSortBy): string {
   return lines.join("\n");
 }
 
+/** Googleドキュメントなどに貼り付ける用のプレーンテキスト（まとめてコピー用） */
+function buildDocumentText(data: MeetingParseResult, taskSort: TaskSortBy): string {
+  const tasks = sortTasks(data.tasks, taskSort);
+  const lines: string[] = [];
+  lines.push("会議メモ整理結果");
+  lines.push("");
+  lines.push("【要約】");
+  lines.push(data.summary || "（なし）");
+  lines.push("");
+  lines.push("【決定事項】");
+  data.decisions.forEach((d) => lines.push("・" + d));
+  lines.push("");
+  lines.push("【未決事項・保留事項】");
+  data.pending_items.forEach((p) => lines.push("・" + p));
+  lines.push("");
+  lines.push("【タスク一覧】");
+  tasks.forEach((t) => {
+    lines.push(`・${t.assignee} / ${t.due_date} / ${t.status}: ${t.task}`);
+    if (t.notes) lines.push("　補足: " + t.notes);
+  });
+  lines.push("");
+  lines.push("【次回確認事項】");
+  data.next_topics.forEach((n) => lines.push("・" + n));
+  return lines.join("\n");
+}
+
 function buildTasksCsv(tasks: MeetingTask[]): string {
   const header = "担当者,タスク,期限,状態,補足\n";
   const rows = tasks.map((t) =>
@@ -92,6 +118,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [taskSort, setTaskSort] = useState<TaskSortBy>("default");
+  const [documentCopyDone, setDocumentCopyDone] = useState(false);
 
   useEffect(() => {
     try {
@@ -163,6 +190,7 @@ export default function Home() {
   };
 
   const fullMarkdown = result ? buildMarkdown(result, taskSort) : "";
+  const fullDocumentText = result ? buildDocumentText(result, taskSort) : "";
 
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-800">
@@ -218,6 +246,17 @@ export default function Home() {
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-5 py-3 shadow-sm">
                 <span className="text-sm font-medium text-zinc-600">出力</span>
                 <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      copyToClipboard(fullDocumentText);
+                      setDocumentCopyDone(true);
+                      setTimeout(() => setDocumentCopyDone(false), 2000);
+                    }}
+                    className="rounded bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+                  >
+                    {documentCopyDone ? "コピーしました" : "まとめてコピー（Googleドキュメント用）"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => copyToClipboard(fullMarkdown)}

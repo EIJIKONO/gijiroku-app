@@ -87,6 +87,7 @@ gijiroku-app/
 │       └── meeting.ts         # 解析結果の型定義
 ├── .env.example
 ├── .env.local                 # 要作成（Git に含めない）
+├── netlify.toml               # Netlify ビルド設定
 ├── package.json
 ├── README.md
 └── tsconfig.json
@@ -101,9 +102,23 @@ gijiroku-app/
 5. **Markdownでダウンロード** / **タスクをCSVでダウンロード** でファイル保存。
 6. タスク一覧は「担当者別」「期限順」で並び替え可能です。
 
+## Netlify にデプロイする
+
+1. **GitHub などにリポジトリをプッシュ**しておく。
+2. [Netlify](https://app.netlify.com/) にログインし、**Add new site > Import an existing project** でリポジトリを選択。
+3. **Build settings** はそのままでOK（`netlify.toml` で指定済み）。
+4. **環境変数を設定**  
+   **Site configuration > Environment variables** で以下を追加：
+   - **Key**: `GEMINI_API_KEY`
+   - **Value**: あなたの Gemini API キー
+   - **Scopes**: すべて（または Production など必要なもの）
+5. **Deploy site** でデプロイ。完了後、表示された URL でアプリにアクセスできます。
+
+※ API キーは Netlify の環境変数にだけ設定し、リポジトリには含めないでください。
+
 ## 注意事項
 
-- APIキーは `.env.local` にのみ記載し、Git にコミットしないでください。
+- APIキーは `.env.local`（ローカル）または Netlify の環境変数にのみ記載し、Git にコミットしないでください。
 - 社内利用を想定しており、ログイン機能やデータベースはありません。
 - 入力はブラウザのローカルストレージに直近1件だけ保存されます。
 
