@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { MeetingParseResult, MeetingTask, TaskSortBy } from "@/types/meeting";
 import { SAMPLE_MEETING_MEMO } from "@/lib/sampleMemo";
 
@@ -119,6 +119,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [taskSort, setTaskSort] = useState<TaskSortBy>("default");
   const [documentCopyDone, setDocumentCopyDone] = useState(false);
+  const [extractLoading, setExtractLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
@@ -135,6 +137,35 @@ export default function Home() {
       if (input.trim()) localStorage.setItem(STORAGE_KEY, input);
     } catch {
       /* ignore */
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    setExtractLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/extract-text", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "ファイルの読み込みに失敗しました。");
+        return;
+      }
+      if (typeof data.text === "string") {
+        setInput(data.text);
+        saveInput();
+      }
+    } catch {
+      setError("ファイルの読み込み中にエラーが発生しました。");
+    } finally {
+      setExtractLoading(false);
+      e.target.value = "";
     }
   };
 
@@ -206,9 +237,32 @@ export default function Home() {
       <main className="mx-auto max-w-4xl px-6 py-8">
         <div className="space-y-6">
           <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-            <label htmlFor="memo" className="mb-2 block text-sm font-medium text-zinc-700">
-              会議メモ（文字起こし・箇条書きをそのまま貼り付けてください）
-            </label>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <label htmlFor="memo" className="text-sm font-medium text-zinc-700">
+                会議メモ（貼り付けまたはファイルから読み込み）
+              </label>
+              <span className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".docx,.doc,.txt"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  aria-label="Wordまたはテキストファイルを選択"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={extractLoading}
+                  className="rounded border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                >
+                  {extractLoading ? "読み込み中..." : "Word / テキストをアップロード"}
+                </button>
+              </span>
+            </div>
+            <p className="mb-2 text-xs text-zinc-500">
+              Googleドキュメントは「ファイル → ダウンロード → Microsoft Word（.docx）」で保存してからアップロードできます。
+            </p>
             <textarea
               id="memo"
               rows={12}
